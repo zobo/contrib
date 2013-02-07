@@ -1,0 +1,58 @@
+#!/usr/bin/php
+/**
+ * Plugin to plot number of different socket states from ss
+ *
+ * Author: Damjan Cvetko
+ */
+<?php
+
+$data = array(
+        "UNKNOWN"=>0,
+        "ESTAB"=>0,
+        "SYN-SENT"=>0,
+        "SYN-RECV"=>0,
+        "FIN-WAIT-1"=>0,
+        "FIN-WAIT-2"=>0,
+        "TIME-WAIT"=>0,
+        "CLOSE-WAIT"=>0,
+        "LAST-ACK"=>0,
+        "LISTEN"=>0,
+        "CLOSING"=>0,
+        );
+
+function nam($s)
+{
+        return str_replace("-","_",strtolower($s));
+}
+
+if ($argv[1] == "config")
+{
+        // do config
+        echo "graph_title Socket states\n";
+        echo "graph_args -l 0\n";
+        echo "graph_category network\n";
+        echo "graph_vlabel count\n";
+        echo "graph_info Graph shows number of all socket states on the system (from ss)\n";
+        foreach ($data as $s=>$v) {
+                echo nam($s).".label ".$s."\n";
+                echo nam($s).".info ".$s."\n";
+        }
+
+        exit(0);
+}
+
+$f = popen("ss -n -t -a", "r");
+while (!feof($f))
+{
+        $line = trim(fgets($f));
+        if (!$line) continue;
+        list($state,) = explode(" ", $line, 2);
+        $data[$state]++;
+}
+pclose($f);
+
+foreach ($data as $s=>$v)
+{
+        echo nam($s).".value ".$v."\n";
+}
+
